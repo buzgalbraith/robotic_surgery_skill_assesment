@@ -9,23 +9,24 @@ DROPOUT = 0.2
 BIDIRECTIONAL = True
 HIDDEN_SIZE = 2**4
 KERNEL_SIZE = 3
-
+NUM_STATES = 10
+RESOLUTION = 2
 if __name__ == "__main__":
-    dataset = TimeSeriesDataset('JIGSAW', trials = ['B001', 'B002'])
+    dataset = TimeSeriesDataset('JIGSAW', trials = ['B005', 'B003'])
 
 
 
     recurrent_model = recurrent_module(input_size= INPUT_SIZE,hidden_size=HIDDEN_SIZE, num_layers = NUM_LAYERS, dropout = DROPOUT, bidirectional =BIDIRECTIONAL)
     conv_model = convolutional_module(input_size= INPUT_SIZE,hidden_size=HIDDEN_SIZE, kernel_size= KERNEL_SIZE, dropout = DROPOUT)
-    model = self_supervised_model(input_size= INPUT_SIZE,hidden_size=HIDDEN_SIZE, num_layers = NUM_LAYERS, dropout = DROPOUT, bidirectional =BIDIRECTIONAL, kernel_size= KERNEL_SIZE)
+    model = self_supervised_model(input_size= INPUT_SIZE,hidden_size=HIDDEN_SIZE, num_layers = NUM_LAYERS, dropout = DROPOUT, bidirectional =BIDIRECTIONAL, kernel_size= KERNEL_SIZE, num_states = NUM_STATES, resolution = RESOLUTION)
     for i, (x, y) in enumerate(dataset):
         print(x.shape)
         print(y.shape)
-        rec_output = recurrent_model(x)
-        conv_output = conv_model(x)
+        # rec_output = recurrent_model(x)
+        # conv_output = conv_model(x)
         final_output = model(x)
-        print(rec_output.shape, "rec")
-        print(conv_output.shape, "conv")
+        # print(rec_output.shape, "rec")
+        # print(conv_output.shape, "conv")
         print(final_output.shape, "final")
         print('-'*100)
         if i==4:
