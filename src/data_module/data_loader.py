@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
+from sklearn.preprocessing import StandardScaler
 DATA_PATH = './data/processed_data'
 """Class for loading time series dataset"""
 class TimeSeriesDataset(Dataset):
@@ -48,14 +49,18 @@ class TimeSeriesDataset(Dataset):
         labels = torch.tensor(labels, dtype=torch.float32)
         return labels
 
-    def _load_input_data(self):
+    def _load_input_data(self, normalize = True):
         data = []
         path = DATA_PATH + "/" + self.dataset + "/" 
+        scaler = StandardScaler()
         for file_path in self.file_list:
             if self.verbose:
                 print("reading in {0}".format(file_path))
             df = pd.read_csv(file_path)
-            time_series = torch.tensor(df.values, dtype=torch.float32)
+            if normalize:
+                df = scaler.fit_transform(df)
+            time_series = torch.tensor(df, dtype=torch.float32)
+            time_series = time_series.reshape(1, time_series.shape[0], time_series.shape[1])
             data.append(time_series)
         return data
 
@@ -69,11 +74,6 @@ class TimeSeriesDataset(Dataset):
         return self.input_data[idx], self.target_data[idx]
 
 
+
 if __name__ == "__main__":
-    dataset = TimeSeriesDataset('JIGSAW', trials = ['B001', 'B002'])
-    print(dataset[0])
-    time_series = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
-    for i, (x, y) in enumerate(time_series):
-        print(x.shape)
-        print(y.shape)
-        break
+    pass 
