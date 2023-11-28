@@ -1,6 +1,9 @@
 import torch 
 import torch.nn as nn
 import torch.nn.functional as F
+import time
+import glob
+import os
 class recurrent_module(nn.Module):
     """Recurrent part of model. Currently made of 2 stacked LSTM bidirectional layers.
         output shape: (batch_size, states_kept, hidden_size)
@@ -15,10 +18,7 @@ class recurrent_module(nn.Module):
         self.lstm = nn.LSTM(input_size,self.hidden_size, num_layers, dropout=dropout, bidirectional=bidirectional, batch_first=True)
     def forward(self, x):
         output, (h_n, c_n) = self.lstm(x)
-        #output =
-        ## want to get the last k output states
         output = output[:,-self.num_states:,:]
-        print("output shape", output.shape) 
         return output.reshape(1 , self.num_states,-1)
 class convolutional_module(nn.Module):
     """Convolutional part of model. Currently made of 2 stacked 1D convolutional layers.
@@ -46,19 +46,17 @@ class convolutional_module(nn.Module):
         x_bar = self.conv2(x_bar)
         x_bar = self.relu(x_bar)
         x_bar = self.dropout2(x_bar)
-        print("before avg pool", x_bar.shape)
         x_bar = self.batch_norm2(x_bar)
         ## want it to always output to 5
         pool_kernel_size = x_bar.shape[2]//self.resolution
         output = nn.functional.avg_pool1d(x_bar, kernel_size=pool_kernel_size)
-        print("after avg pool", output.shape)
         return output
-class self_supervised_model(nn.Module):
+class Base_Model(nn.Module):
     """Combines recurrent and convolutional modules and adds a fully connected layer.
         output shape: (batch_size,learned features, 1) so that is likelihood of expert at each time step.
     """
     def __init__(self, input_size, hidden_size, num_layers=2, dropout=0.2, bidirectional=True, kernel_size=3, num_states=10, resolution=2):
-        super(self_supervised_model, self).__init__()
+        super(Base_Model, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.num_layers = num_layers
@@ -75,12 +73,7 @@ class self_supervised_model(nn.Module):
     def forward(self, x):
         recurrent_output = self.recurrent_module(x)
         convolutional_output = self.convolutional_module(x)
-        print(recurrent_output.shape, "rec")
-        print(convolutional_output.shape, "conv")
         output = torch.cat((recurrent_output, convolutional_output.permute(0, 2, 1)), dim=1)
-        print(output.shape)
-        print(output.reshape(1, -1).shape)
-        print(self.fc.weight.shape)
         output = self.fc(output.reshape(1, -1))
         output = self.sigmoid(output)
         return output
