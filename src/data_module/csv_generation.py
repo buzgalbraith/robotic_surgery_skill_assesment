@@ -8,7 +8,7 @@ SAVE_PATH = 'data/processed_data/'
 JIGSAW_PATH = os.path.join(DATA_PATH, 'JIGSAW/')
 JIGSAW_TASKS = ['Suturing', 'Knot_Tying', 'Needle_Passing']
 ROMSA_Path = os.path.join(DATA_PATH, 'ROMSA/')
-ROMSA_TASKS = ["Pea_on_a_Peg"]
+ROMSA_TASKS = ["Pea_on_a_Peg", 'Post_and_Sleeve', 'Wire_Chaser']
 
 
 def downsample(df:pd.DataFrame, original_frequency:int) -> pd.DataFrame:
@@ -176,6 +176,7 @@ def get_JIGSAW_ground_truth(read_path, save_path, task_list):
             lines = f.readlines()
             lines = [line.strip().split('\t') for line in lines]
             lines = [[word for word in line if word != ""] for line in lines]
+            lines = lines[:-1]
             df = pd.DataFrame(lines)
             df.columns = ['task', 'robotic_surgery_experience', 'overall_score', 'score_component_1','score_component_2','score_component_3','score_component_4','score_component_5','score_component_6']
         f.close()
@@ -204,14 +205,9 @@ def get_ROMSA_ground_truth(read_path, save_path):
 
 if __name__ == "__main__":
     # make directory for generated data
-    try:
-        os.mkdir(SAVE_PATH)
-    except:
-        pass 
+    os.makedirs(SAVE_PATH, exist_ok=True)
     get_JIGSAW_csvs(JIGSAW_PATH, SAVE_PATH,JIGSAW_TASKS)
     get_ROMSA_csvs(ROMSA_Path, SAVE_PATH, ROMSA_TASKS)
-    path = 'data/processed_data/JIGSAW/Knot_Tying/Knot_Tying_G004.csv'
     get_JIGSAW_ground_truth(DATA_PATH, SAVE_PATH, JIGSAW_TASKS)
-    get_ROMSA_csvs(ROMSA_Path, SAVE_PATH, ROMSA_TASKS)
     get_ROMSA_ground_truth(DATA_PATH, SAVE_PATH)
     

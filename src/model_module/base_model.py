@@ -19,6 +19,7 @@ class recurrent_module(nn.Module):
     def forward(self, x):
         output, (h_n, c_n) = self.lstm(x)
         output = output[:,-self.num_states:,:]
+        # print(output.shape)
         return output.reshape(1 , self.num_states,-1)
 class convolutional_module(nn.Module):
     """Convolutional part of model. Currently made of 2 stacked 1D convolutional layers.
