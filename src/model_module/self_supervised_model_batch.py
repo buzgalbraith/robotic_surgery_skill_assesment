@@ -5,11 +5,10 @@ import os
 import torch
 import glob
 class Self_Supervised_Model(Base_Model):
-    def __init__(self, input_size, hidden_size, num_layers=2, dropout=0.2, bidirectional=True, kernel_size=3, num_states=10, resolution=2, alpha=0.5,avg=True, verbose=False):
+    def __init__(self, input_size, hidden_size, num_layers=2, dropout=0.2, bidirectional=True, kernel_size=3, num_states=10, resolution=2, alpha=0.5, verbose=False):
         super(Self_Supervised_Model, self).__init__(input_size, hidden_size, num_layers, dropout, bidirectional, kernel_size, num_states, resolution)
         self.dropout_layer = torch.nn.Dropout(p=self.dropout, inplace=True)
         self.verbose = verbose
-        self.avg = avg
         self.alpha = alpha ## this weights the importance of pseudo labels vs source labels
     def save_model(self, path ='saved_models/self_supervised_Model/'):
         os.makedirs(path, exist_ok=True)
@@ -18,7 +17,7 @@ class Self_Supervised_Model(Base_Model):
     def load_model(self, path=None):
         """loads last saved model if path is none."""
         if path is None:
-            path = max(glob.glob("saved_models/self_supervised_model/*.pt"), key=os.path.getctime)
+            path = max(glob.glob("saved_models/supervised_model/*.pt"), key=os.path.getctime)
         self.load_state_dict(torch.load(path))
     def stochastic_forward(self,batch):
         """stochastic forward pass for self supervised learning."""
@@ -29,7 +28,7 @@ class Self_Supervised_Model(Base_Model):
                 drop_x = self.dropout_layer(x)
                 batch_output[i] = self(drop_x)
         return batch_output
-    def uncertainty_estimate(self, x, T=1000, get_ci=True):
+    def uncertainty_estimate(self, x, T=1000, get_ci=False):
         """uncertainty estimate for self supervised learning."""
         estimates = []
         for t in range(T):
@@ -49,7 +48,7 @@ class Self_Supervised_Model(Base_Model):
         for i, (x, _) in enumerate(target_dataset):
             if i > test_steps:
                 break
-            mean, var, confidence_interval = self.uncertainty_estimate(x, T=T, get_ci=False)
+            mean, var, confidence_interval = self.uncertainty_estimate(x, T=T)
             pseudo_labels.append(mean)
         pseudo_labels = torch.cat((pseudo_labels), dim=0)
         indices = torch.argsort(torch.abs(pseudo_labels - 0.5),dim=0, descending=False)
@@ -104,61 +103,59 @@ class Self_Supervised_Model(Base_Model):
                 del self_supervised_dataset.target_dataset.input_data[batch_index][remainder]
                 del self_supervised_dataset.target_dataset.target_data[batch_index][remainder]
         return self_supervised_dataset
-    def source_loss(self, source_dataset, criterion, device,epoch, total_epochs):
+    def source_loss(self, source_dataset, optimizer, criterion, device,epoch, total_epochs):
         """loss function for source dataset."""
         total_steps = len(source_dataset)
         start_time = time.time()
-        epoch_loss = None
         for i, (input_bath, target_bath) in enumerate(source_dataset):
+            epoch_loss = 0
+            optimizer.zero_grad()
             for x,y in zip(input_bath, target_bath):
                 x = x.to(device)
                 y = y.to(device).squeeze()
                 final_output = self(x).squeeze()
                 loss = criterion(final_output, y)
-                if epoch_loss is None:
-                    epoch_loss = loss
-                else:
-                    epoch_loss +=loss
+            loss.backward()
+            optimizer.step()
             if self.verbose:
                 print("Source batch [{}/{}] epoch [{}/{}] Loss: {:.4f}".format(i, total_steps, epoch, total_epochs, loss.item()))
+            epoch_loss += loss.item()
         end_time = time.time()
         total_time = round(end_time-start_time, 2)
         if self.verbose:
             print("epoch [{}/{}] total_time: {} seconds".format(epoch,total_epochs, total_time))
         return epoch_loss
-    def target_loss(self, target_dataset, criterion, device, epoch, total_epochs):
+    def target_loss(self, target_dataset, optimizer, criterion, device, epoch, total_epochs):
         """loss function for target dataset."""
         if self.verbose:
             print("number of trials in target dataset during target ste: {}".format(target_dataset.get_num_trials()))
         total_steps = len(target_dataset)
         start_time = time.time()
-        epoch_loss = None
         for i, (input_bath, target_bath) in enumerate(target_dataset):
+            epoch_loss = 0
+            optimizer.zero_grad()
             for x,y in zip(input_bath, target_bath):
                 x = x.to(device)
                 y = y.to(device).squeeze()
                 final_output = self(x).squeeze()
                 loss = criterion(final_output, y) 
-                if epoch_loss is None:
-                    epoch_loss = loss
-                else:
-                    epoch_loss +=loss
+            loss = loss * self.alpha
+            loss.backward()
+            optimizer.step()
             if self.verbose:
                 print("Target batch [{}/{}] epoch [{}/{}] Loss: {:.4f}".format(i, total_steps, epoch, total_epochs, loss.item))
+            epoch_loss += loss.item()
         end_time = time.time()
         total_time = round(end_time-start_time, 2)
         if self.verbose:
             print("epoch [{}/{}] total_time: {} seconds".format(epoch,total_epochs, total_time))
         return epoch_loss
-    def self_supervised_loss(self, dataset, target_loss, source_loss):
+    def self_supervised_loss(self, train_dataset, criterion):
         """loss function for self supervised learning.
             note that here we assume that there is also l2 regularization in the optimizer (weight decay)
         """
         ## this is going to need to figure out where the source and target data is and way the loss accordingly.
-        if self.avg: ## determines if we average loss over trials 
-            source_loss = source_loss/dataset.train_dataset[0].get_num_trials()
-            target_loss = target_loss/dataset.train_dataset[1].get_num_trials()
-        return source_loss + self.alpha * target_loss, target_loss, source_loss
+        return source_loss + self.alpha * target_loss
     def model_step(self, dataset, optimizer,criterion, device, epoch, total_epochs):
         self.train()
         ## shuffle datasets
@@ -169,21 +166,18 @@ class Self_Supervised_Model(Base_Model):
             print("number of trials in source train dataset: {}".format(dataset.train_dataset[0].get_num_trials()))
             print("number of trials in target train dataset: {}".format(dataset.train_dataset[1].get_num_trials()))
             print("number of trials in original target dataset: {}".format(dataset.target_dataset.get_num_trials()))
-        optimizer.zero_grad()
-        source_loss = self.source_loss(dataset.train_dataset[0], criterion, device,epoch, total_epochs)
-        target_loss = self.target_loss(dataset.train_dataset[1], criterion, device,epoch, total_epochs)
-        self_supervised_loss,target_loss,source_loss =  self.self_supervised_loss(dataset,target_loss, source_loss)
-        self_supervised_loss.backward()
-        optimizer.step()
+        source_loss = self.source_loss(dataset.train_dataset[0], optimizer, criterion, device,epoch, total_epochs)
+        target_loss = self.target_loss(dataset.train_dataset[1], optimizer, criterion, device,epoch, total_epochs)
+
         epoch_finish = time.time()
         epoch_time = round(epoch_finish - epoch_start, 2)
-        return source_loss.item(), target_loss.item()
+        # epoch_loss = source_loss + source_loss
+        return source_loss, target_loss
     def self_supervised_train_step(self, self_supervised_dataset, optimizer,criterion, device, epoch, total_epochs, T=1000, K=5):
         """self supervised training step."""
         ## get pseudo labels and model uncertainty
         pseudo_labels, indices = self.get_pseudo_labels(self_supervised_dataset.target_dataset, T=T)
         ## update datasets
-
         self_supervised_dataset = self.update_datasets(self_supervised_dataset, pseudo_labels,indices, K=K)
         ## train on updated source dataset.
         source_loss, target_loss = self.model_step(self_supervised_dataset, optimizer, criterion, device, epoch, total_epochs)

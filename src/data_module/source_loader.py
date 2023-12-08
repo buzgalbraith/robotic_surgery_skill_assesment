@@ -3,14 +3,15 @@ import os
 import pandas as pd 
 import torch
 DATA_PATH = './data/processed_data'
+JIGSAW_TASKS = ['Suturing', 'Knot_Tying', 'Needle_Passing']
 class Source_Loader(TimeSeriesDataset):
-    def __init__(self, trials = None, verbose = False, mode="binary", batch_size=1):
+    def __init__(self, trials = None, tasks = None, verbose = False, mode="binary", batch_size=1):
         super().__init__(trials, verbose, mode, batch_size)
         self.dataset = "JIGSAW"
         self.save_dir = DATA_PATH + "/" + self.dataset + "/"
         self.trials = trials
         self.batch_size = batch_size
-        self.tasks = ['Suturing', 'Knot_Tying', 'Needle_Passing']
+        self.tasks = ['Suturing', 'Knot_Tying', 'Needle_Passing'] if tasks is None else tasks
         self.load_data()
     def load_target_data(self):
             scores_location = self.save_dir + "METADATA/"
@@ -21,6 +22,7 @@ class Source_Loader(TimeSeriesDataset):
                 df = pd.read_csv(file)
                 if self.trials is not None:
                     df = df[df['task'].str.contains('|'.join(self.trials))]
+                    df = df[df["task"].str.contains('|'.join(self.tasks))] 
                 all_trials += df['task'].values.tolist()
                 df = df[['robotic_surgery_experience']]
                 if self.mode == "binary":

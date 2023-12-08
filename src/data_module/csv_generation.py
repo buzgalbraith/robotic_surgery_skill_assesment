@@ -40,6 +40,7 @@ def format_ROMSA(read_path:str, save_path:str)->None:
     to_drop += [col for col in df.columns if 'orientation_y' in col]
     to_drop += [col for col in df.columns if 'orientation_z' in col]
     df.drop(to_drop, axis=1, inplace=True)
+    df.dropna(inplace=True, axis=0)
     ## order cols
     colnames = []
     for part in ["MTML" , "MTMR", "PSM1", "PSM2"]:

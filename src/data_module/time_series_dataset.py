@@ -5,23 +5,23 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import StandardScaler
 import random
+import ipdb
 DATA_PATH = './data/processed_data'
-"""Class for loading time series dataset"""
-## probably refactor this as source and target dataset classes. 
+"""base class for loading time series dataset"""
 class TimeSeriesDataset(Dataset):
-    def __init__(self, trials = None, verbose = False, mode="binary", batch_size=1):
+    def __init__(self, trials = None, tasks = None,verbose = False, mode="binary", batch_size=1):
         self.verbose = verbose
         self.mode = mode
         self.batch_size = batch_size
         self.file_list = []
         self.trials = trials
+        self.tasks = tasks
         self.input_data = []
         self.target_data = []
     def shuffle(self):
         zipped = list(zip(self.input_data, self.target_data))
         random.shuffle(zipped)
         self.input_data, self.target_data = zip(*zipped)
-        # why is this a tuple?
         self.input_data = list(self.input_data)
         self.target_data = list(self.target_data)
     def __len__(self):
@@ -33,8 +33,6 @@ class TimeSeriesDataset(Dataset):
         path = DATA_PATH + "/" + dataset + "/" 
         scaler = StandardScaler()
         for file_path in self.file_list:
-            if self.verbose:
-                print("reading in {0}".format(file_path))
             df = pd.read_csv(file_path)
             if normalize:
                 df = scaler.fit_transform(df)
@@ -57,5 +55,16 @@ class TimeSeriesDataset(Dataset):
         for trial in self.input_data:
             total_trails += len(trial)
         return total_trails 
+    def unbatch(self):
+        """flattens all the input and target data into a list"""
+        overall_input_list = []
+        overall_target_data = []
+        for x,y in zip(self.input_data, self.target_data):
+            for batch_index in range(len(x)):
+                overall_input_list.append(x[batch_index])
+                overall_target_data.append(y[batch_index])
+        self.input_data = overall_input_list
+        self.output_data = overall_target_data
+
 if __name__ == "__main__":
     pass 

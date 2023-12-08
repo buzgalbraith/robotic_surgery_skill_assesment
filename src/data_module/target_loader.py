@@ -3,14 +3,15 @@ import os
 import pandas as pd
 import torch
 DATA_PATH = './data/processed_data'
+## class for loading target dataset
 class Target_Loader(TimeSeriesDataset):
-    def __init__(self, trials = None, verbose = False, mode="binary", batch_size=1):
+    def __init__(self, trials = None,tasks=None,  verbose = False, mode="binary", batch_size=1):
         super().__init__(trials, verbose, mode, batch_size)
         self.trials = trials
         self.dataset = "ROMSA"
         self.save_dir = DATA_PATH + "/" + self.dataset + "/"
         self.batch_size = batch_size
-        self.tasks = ["Pea_on_a_Peg", 'Post_and_Sleeve', 'Wire_Chaser']
+        self.tasks = ["Pea_on_a_Peg", 'Post_and_Sleeve', 'Wire_Chaser'] if tasks is None else tasks
         self.load_data()
     def load_target_data(self):
         scores_location = self.save_dir + "METADATA/"
@@ -18,11 +19,10 @@ class Target_Loader(TimeSeriesDataset):
         all_targets = []
         all_trials = []
         for file in files:
-            if self.verbose:
-                print("reading in {0}".format(file))
             df = pd.read_csv(file)
             if self.trials is not None:
                 df = df[df['File_name'].str.contains('|'.join(self.trials))]
+                df = df[df['File_name'].str.contains('|'.join(self.tasks))]
             all_trials += df['File_name'].values.tolist()
             df = df[['Score']]
             all_targets += df.values.tolist()
