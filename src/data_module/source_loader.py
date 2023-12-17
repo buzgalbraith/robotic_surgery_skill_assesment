@@ -10,6 +10,7 @@ class Source_Loader(TimeSeriesDataset):
         self.dataset = "JIGSAW"
         self.save_dir = DATA_PATH + "/" + self.dataset + "/"
         self.trials = trials
+        self.mode = mode
         self.batch_size = batch_size
         self.tasks = ['Suturing', 'Knot_Tying', 'Needle_Passing'] if tasks is None else tasks
         self.load_data()

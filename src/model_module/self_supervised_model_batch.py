@@ -18,6 +18,9 @@ class Self_Supervised_Model(Base_Model):
         """loads last saved model if path is none."""
         if path is None:
             path = max(glob.glob("saved_models/supervised_model/*.pt"), key=os.path.getctime)
+        else:
+            print_path = path.split('/')[-1]
+            print("Loading model from path: ", print_path)
         self.load_state_dict(torch.load(path))
     def stochastic_forward(self,batch):
         """stochastic forward pass for self supervised learning."""
@@ -59,7 +62,7 @@ class Self_Supervised_Model(Base_Model):
 
 
     def update_datasets(self, self_supervised_dataset, pseudo_labels,indices, K=5):
-        """need to think of more ways to validate that this is working"""
+        """lets keep k as batch size"""
         ## get indices of top K pseudo labels
         top_k_indices = indices[:K].flatten() ## get the top k indices
         input_data_to_add = []

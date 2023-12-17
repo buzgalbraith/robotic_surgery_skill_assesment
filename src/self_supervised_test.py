@@ -16,23 +16,24 @@ HIDDEN_SIZE = 2**4
 KERNEL_SIZE = 3
 NUM_STATES = 9
 RESOLUTION = 2
-BATCH_SIZE = 5 ## was 35
-TOTAL_EPOCHS = 100
-ALPHA = 0.5
+BATCH_SIZE = 10 ## was have tried 3,5,10
+TOTAL_EPOCHS = 250 ## have tried 10, 100, 250,1000
+ALPHA = 0.85 ## have tried 0.2 ,0,7, 0.85
 AVG = True
-LAMBDA = 0.1
-T = 10
-K = 3
+LAMBDA = 0.0005 ## used to be 0.2
+T = 1000 ## have tried 10, 100, 250,1000
+K = BATCH_SIZE
 VERBOSE = False
 
 if __name__ == "__main__":
     # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     device = torch.device("cpu")
     # self_supervised_dataset = Self_Supervised_Dataset(ROMSA_trials = ['X01'], JIGSAW_trials = ['B005', 'D002'], mode="binary", verbose=False, batch_size = BATCH_SIZE)
-    self_supervised_dataset = Self_Supervised_Dataset(mode=MODE, verbose= False, batch_size =BATCH_SIZE)
-    self_supervised_model = Self_Supervised_Model(input_size= INPUT_SIZE,hidden_size=HIDDEN_SIZE, num_layers = NUM_LAYERS, dropout = DROPOUT, bidirectional =BIDIRECTIONAL, kernel_size= KERNEL_SIZE, num_states = NUM_STATES, resolution = RESOLUTION, verbose=VERBOSE, avg=AVG).to(device)
-    criterion = torch.nn.BCELoss()
-    optimizer = torch.optim.Adam(self_supervised_model.parameters(), lr=ALPHA, weight_decay=LAMBDA)
+    self_supervised_dataset = Self_Supervised_Dataset(mode=MODE, batch_size =BATCH_SIZE)
+    self_supervised_model = Self_Supervised_Model(input_size= INPUT_SIZE,hidden_size=HIDDEN_SIZE, num_layers = NUM_LAYERS, dropout = DROPOUT, bidirectional =BIDIRECTIONAL, kernel_size= KERNEL_SIZE, num_states = NUM_STATES, resolution = RESOLUTION).to(device)
+    criterion = torch.nn.BCELoss() 
+    # optimizer = torch.optim.Adam(self_supervised_model.parameters(), lr=ALPHA, weight_decay=LAMBDA)
+    optimizer = torch.optim.SGD(self_supervised_model.parameters(), lr=ALPHA, momentum=0.9, weight_decay=0.0005)
     source_loss_history = []
     target_loss_history = []
     self_supervised_loss_history = []

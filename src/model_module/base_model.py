@@ -8,17 +8,36 @@ class recurrent_module(nn.Module):
     """Recurrent part of model. Currently made of 2 stacked LSTM bidirectional layers.
         output shape: (batch_size, states_kept, hidden_size)
     """
-    def __init__(self, input_size, hidden_size, num_layers=2, dropout=0.2, bidirectional=False, num_states=10):
+    def __init__(self, input_size, hidden_size, num_layers=2, dropout=0.2, bidirectional=False, num_states=10, states_type:str = 'last'):
         super(recurrent_module, self).__init__()
+        assert states_type in ['last', 'first', 'last_and_first', 'middle', 'alternating']
         self.input_size = input_size
         self.hidden_size = hidden_size//2 if bidirectional else hidden_size
         self.num_layers = num_layers
         self.dropout = dropout
         self.num_states = num_states
         self.lstm = nn.LSTM(input_size,self.hidden_size, num_layers, dropout=dropout, bidirectional=bidirectional, batch_first=True)
+        self.states_type = states_type
+    def get_states(self, output):
+        if self.states_type == 'last':
+            return output[:,-self.num_states:,:]  ##outputs the last n states
+        elif self.states_type == 'first':  
+            return output[:,:self.num_states,:] ## outputs the first n states
+        elif self.states_type == 'last_and_first':
+            return torch.cat((output[:,:self.num_states//2,:], output[:,-self.num_states//2:,:]), dim=1) ## outputs the first and last n//2 states
+        elif self.states_type == 'middle':
+            N = output.shape[1]
+            return output[:,N//2-self.num_states//2:N//2+self.num_states//2,:] ## outputs the middle n states
+        elif self.states_type == 'alternating':
+            ## want to get every N//n state
+            N = output.shape[1]
+            return output[:,::N//self.num_states,:] ## outputs the middle n states
+
+    
+    
     def forward(self, x):
         output, (h_n, c_n) = self.lstm(x)
-        output = output[:,-self.num_states:,:]
+        output = self.get_states(output)
         return output.reshape(1 , self.num_states,-1)
 class convolutional_module(nn.Module):
     """Convolutional part of model. Currently made of 2 stacked 1D convolutional layers.
@@ -55,8 +74,9 @@ class Base_Model(nn.Module):
     """Combines recurrent and convolutional modules and adds a fully connected layer.
         output shape: (batch_size,learned features, 1) so that is likelihood of expert at each time step.
     """
-    def __init__(self, input_size, hidden_size, num_layers=2, dropout=0.2, bidirectional=True, kernel_size=3, num_states=10, resolution=2):
+    def __init__(self, input_size, hidden_size, num_layers=2, dropout=0.2, bidirectional=True, kernel_size=3, num_states=10, resolution=2, verbose=False):
         super(Base_Model, self).__init__()
+        self.verbose = verbose
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.num_layers = num_layers

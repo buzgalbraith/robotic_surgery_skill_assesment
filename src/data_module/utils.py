@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import os
 ROMSA_TASKS = ["Pea_on_a_Peg", 'Post_and_Sleeve', 'Wire_Chaser']
+scores_path = "data/processed_data/ROMSA/METADATA/scores.csv"
 
 def plot_ROMSA_progression(task:str, participant:str, save_path:str = "saved_figs/ROMSA_progression/", save:bool = True):
     """Plots the ground truth of a single participant on a single task over repeated trials.
@@ -35,4 +36,16 @@ def plot_ROMSA_progression(task:str, participant:str, save_path:str = "saved_fig
         plt.savefig(save_path+task+"_"+participant+".png")
     else:
         plt.show()
-    
+def get_partipant_trials(participant_id):
+    df = pd.read_csv(scores_path)
+    df = df.loc[df['File_name'].str.contains(participant_id)]
+    return df["File_name"].tolist()
+def get_task_partipats(task_name):
+    df = pd.read_csv(scores_path)
+    df = df.loc[df['File_name'].str.contains(task_name)]
+    return df["File_name"].tolist()
+def get_trials_task_partipants(task_name, participant_id):
+    df = pd.read_csv(scores_path)
+    df = df.loc[df['File_name'].str.contains(task_name)]
+    df = df.loc[df['File_name'].str.contains(participant_id)]
+    return df["File_name"].tolist()
