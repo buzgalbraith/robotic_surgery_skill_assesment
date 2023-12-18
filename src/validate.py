@@ -10,11 +10,11 @@ DROPOUT = 0.2
 BIDIRECTIONAL = True
 MODE = 'binary'
 ## we an also play with the model parameters more
-HIDDEN_SIZE = 2**4
+HIDDEN_SIZE = 2**2
 KERNEL_SIZE = 3
-NUM_STATES = 9 
-RESOLUTION = 2
-BATCH_SIZE = 5 ## was 35
+NUM_STATES = 2 
+RESOLUTION = 1
+BATCH_SIZE = 3 ## was 35
 TOTAL_EPOCHS = 3
 ALPHA = 0.85
 AVG = True
@@ -26,7 +26,7 @@ VERBOSE = False
 if __name__ == "__main__":
     print("starting ")
     # test_task = 'Post_and_Sleeve'
-    test_task = 'Wire_Chaser'
+    test_task = 'Pea_on_a_Peg'
     test_participant = "X01"
     device = "cpu"
     plot_ROMSA_progression(task=test_task, participant=test_participant)
@@ -36,9 +36,9 @@ if __name__ == "__main__":
     # model.load_model(path ="saved_models/self_supervised_model/1702082867.3234649_model.pt")
     print("model loaded")
     # model.load_model()
-    path = "saved_models/self_supervised_model/t_1000_epoch_250.pt"
+    # path = "saved_models/self_supervised_model/t_1000_epoch_250.pt"
 
-    model.load_model(path = path)
+    model.load_model()
     participant_data.unbatch()
     plot_confidence_interval_unsupervised(model=model, x=participant_data.input_data, labels=labels, T=T, title=test_task+"_"+test_participant)
     

@@ -5,8 +5,8 @@ import os
 import torch
 import glob
 class Self_Supervised_Model(Base_Model):
-    def __init__(self, input_size, hidden_size, num_layers=2, dropout=0.2, bidirectional=True, kernel_size=3, num_states=10, resolution=2, alpha=0.5):
-        super(Self_Supervised_Model, self).__init__(input_size, hidden_size, num_layers, dropout, bidirectional, kernel_size, num_states, resolution)
+    def __init__(self, input_size, hidden_size, num_layers=2, dropout=0.2, bidirectional=True, kernel_size=3, num_states=10, resolution=2, alpha=0.5, states_type='alternating'):
+        super(Self_Supervised_Model, self).__init__(input_size, hidden_size, num_layers, dropout, bidirectional, kernel_size, num_states, resolution, states_type=states_type)
         self.dropout_layer = torch.nn.Dropout(p=self.dropout, inplace=True)
         self.alpha = alpha ## this weights the importance of pseudo labels vs source labels
     def save_model(self, path ='saved_models/self_supervised_Model/'):

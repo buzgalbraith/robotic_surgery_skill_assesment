@@ -10,20 +10,18 @@ INPUT_SIZE = 40
 NUM_LAYERS = 2
 DROPOUT = 0.2
 BIDIRECTIONAL = True
-HIDDEN_SIZE = 2**4
+HIDDEN_SIZE = 2**2
 KERNEL_SIZE = 3
-NUM_STATES = 9
+NUM_STATES = 4
 RESOLUTION = 2
 BATCH_SIZE = 5 ## was 35
 TOTAL_EPOCHS = 50
+STATES_TYPE = "last_and_first"
 import tqdm 
 
 if __name__ == "__main__":
-    # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    device = torch.device("cpu")
-    # dataset = Source_Loader( trials = ['B005', 'D002'], mode="binary", verbose=False, batch_size = BATCH_SIZE) 
-    # dataset = Source_Loader( trials = ['B005', 'D002', "C003"],tasks=["Suturing"],  mode="binary", verbose=False, batch_size = BATCH_SIZE) 
-    
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    # device = torch.device("cpu")
     dataset = Source_Loader(mode="binary", verbose=False, batch_size = BATCH_SIZE) 
     supervised_model = Supervised_Model(input_size= INPUT_SIZE,hidden_size=HIDDEN_SIZE, num_layers = NUM_LAYERS, dropout = DROPOUT, bidirectional =BIDIRECTIONAL, kernel_size= KERNEL_SIZE, num_states = NUM_STATES, resolution = RESOLUTION).to(device)
     epoch = 0 

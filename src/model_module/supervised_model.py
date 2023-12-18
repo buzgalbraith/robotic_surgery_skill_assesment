@@ -5,8 +5,8 @@ import os
 import torch
 import glob
 class Supervised_Model(Base_Model):
-    def __init__(self, input_size, hidden_size, num_layers=2, dropout=0.2, bidirectional=True, kernel_size=3, num_states=10, resolution=2, verbose=False):
-        super(Supervised_Model, self).__init__(input_size, hidden_size, num_layers, dropout, bidirectional, kernel_size, num_states, resolution,verbose)
+    def __init__(self, input_size, hidden_size, num_layers=2, dropout=0.2, bidirectional=True, kernel_size=3, num_states=10, resolution=2, verbose=False, states_type='alternating'):
+        super(Supervised_Model, self).__init__(input_size, hidden_size, num_layers, dropout, bidirectional, kernel_size, num_states, resolution,verbose, states_type=states_type)
     def save_model(self, path ='saved_models/supervised_model/'):
         os.makedirs(path, exist_ok=True)
         save_path = path +str(time.time()) + "_model.pt"
