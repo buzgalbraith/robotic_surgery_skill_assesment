@@ -1,6 +1,6 @@
-from data_module.source_loader import Source_Loader
-from data_module.target_loader import Target_Loader
-from data_module.time_series_dataset import TimeSeriesDataset   
+from src.data_module.source_loader import Source_Loader
+from src.data_module.target_loader import Target_Loader
+from src.data_module.time_series_dataset import TimeSeriesDataset   
 ## object which can hold both the source and target dataset
 class Self_Supervised_Dataset():
     def __init__(self, ROMSA_trials = None, JIGSAW_trials = None,  verbose = False, mode="binary", batch_size=1):

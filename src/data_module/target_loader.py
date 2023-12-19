@@ -1,4 +1,4 @@
-from data_module.time_series_dataset import TimeSeriesDataset
+from src.data_module.time_series_dataset import TimeSeriesDataset
 import os
 import pandas as pd
 import torch

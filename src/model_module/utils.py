@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
-from model_module.self_supervised_model import Self_Supervised_Model
-from model_module.base_model import Base_Model
+from src.model_module.self_supervised_model import Self_Supervised_Model
+from src.model_module.base_model import Base_Model
 import torch
 import numpy as np
 
@@ -105,3 +105,19 @@ def plot_confidence_interval_unsupervised(model:Self_Supervised_Model, x:torch.t
         fig.savefig(save_path)
     else:
         plt.show()
+def get_tasks_and_trials_from_file_names(file_names:list):
+    """gets tasks and trials from file names.
+    Args:
+        file_names(list): list of file names
+    Returns:
+        tasks(list): list of tasks
+        trials(list): list of trials
+    """
+    tasks = []
+    trials = []
+    for file_name in file_names:
+        task = file_name[:-5]
+        trial = file_name[-5:]
+        tasks.append(task)
+        trials.append(trial)
+    return tasks, trials

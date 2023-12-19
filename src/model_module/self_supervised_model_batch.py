@@ -1,5 +1,5 @@
-from model_module.base_model import Base_Model
-from data_module.time_series_dataset import TimeSeriesDataset
+from src.model_module.base_model import Base_Model
+from src.data_module.time_series_dataset import TimeSeriesDataset
 import time
 import os
 import torch

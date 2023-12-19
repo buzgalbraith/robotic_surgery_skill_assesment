@@ -1,5 +1,5 @@
-from model_module.base_model import Base_Model
-from data_module.time_series_dataset import TimeSeriesDataset
+from src.model_module.base_model import Base_Model
+from src.data_module.time_series_dataset import TimeSeriesDataset
 import time
 import os
 import torch
@@ -13,9 +13,11 @@ class Self_Supervised_Model(Base_Model):
         os.makedirs(path, exist_ok=True)
         save_path = path +str(time.time()) + "_model.pt"
         torch.save(self.state_dict(), save_path)
-    def load_model(self, path=None):
+    def load_model(self, path=None, mode="train"):
         """loads last saved model if path is none."""
-        if path is None:
+        if path is None and mode=="train":
+            path = max(glob.glob("saved_models/supervised_model/*.pt"), key=os.path.getctime)
+        elif path is None and mode=="validate":
             path = max(glob.glob("saved_models/self_supervised_model/*.pt"), key=os.path.getctime)
         else:
             print_path = path.split('/')[-1]
@@ -30,7 +32,7 @@ class Self_Supervised_Model(Base_Model):
                 drop_x = self.dropout_layer(x)
                 batch_output[i] = self(drop_x)
         return batch_output
-    def uncertainty_estimate(self, x, T=1000, get_ci=True):
+    def uncertainty_estimate(self, x, T=1000, get_ci=True, get_estimates=False):
         """uncertainty estimate for self supervised learning."""
         estimates = []
         for t in range(T):
@@ -42,6 +44,8 @@ class Self_Supervised_Model(Base_Model):
         if get_ci:
             q = torch.tensor([0.025, 0.975])
             confidence_interval = torch.quantile(estimates, q, dim=0)
+        if get_estimates:
+            return estimates
         return mean, var, confidence_interval
     def get_pseudo_labels(self, target_dataset, T=1000):
         """get pseudo labels for target dataset."""
